@@ -12,11 +12,7 @@ pub fn add(task: &task::Task) {
     tasks.tasks.push((*task).clone());
     tasks.last_id = task.id;
 
-    // Write updated tasks to file (truncate before writing)
-    let mut file = File::create("tasks.json").expect("Unable to open tasks file");
-    file.write_all(serde_json::to_string(&tasks).unwrap().as_bytes())
-        .expect("Unable to write tasks to file");
-    file.flush().expect("Unable to flush tasks file");
+    write(&tasks);
 }
 
 pub fn get_last_id() -> u32 {
@@ -43,15 +39,11 @@ pub fn delete(id: u32) {
 
     tasks.tasks.retain(|task| task.id != id);
 
-    // Write updated tasks to file (truncate before writing)
-    let mut file = File::create("tasks.json").expect("Unable to open tasks file");
-    file.write_all(serde_json::to_string(&tasks).unwrap().as_bytes())
-        .expect("Unable to write updated tasks to file");
-    file.flush().expect("Unable to flush tasks file");
+    write(&tasks);
 }
 
 // Reads the tasks from the file
-fn get_tasks_from_file() -> task::TaskList {
+pub fn get_tasks_from_file() -> task::TaskList {
     let file_content = fs::read_to_string("tasks.json");
     match file_content {
         Ok(content) => {
@@ -72,4 +64,49 @@ fn get_tasks_from_file() -> task::TaskList {
             last_id: 0,
         },
     }
+}
+
+pub fn list_tasks(status_filter: Option<&str>) -> Vec<task::Task> {
+    let tasks = get_tasks_from_file().tasks;
+
+    match status_filter {
+        Some("done") => tasks
+            .into_iter()
+            .filter(|t| t.status == task::Status::Done)
+            .collect(),
+        Some("in-progress") => tasks
+            .into_iter()
+            .filter(|t| t.status == task::Status::InProgress)
+            .collect(),
+        Some("todo") => tasks
+            .into_iter()
+            .filter(|t| t.status == task::Status::Todo)
+            .collect(),
+        _ => tasks, // If no filter is provided, return all tasks
+    }
+}
+
+fn write(tasks: &task::TaskList) {
+    let mut file = File::create("tasks.json").expect("Unable to open tasks file");
+    file.write_all(serde_json::to_string(tasks).unwrap().as_bytes())
+        .expect("Unable to write tasks to file");
+    file.flush().expect("Unable to flush tasks file");
+}
+
+pub fn update(task: &task::Task) {
+    let mut tasks = get_tasks_from_file();
+    if let Some(existing_task) = tasks.tasks.iter_mut().find(|t| t.id == task.id) {
+        existing_task.description = task.description.clone();
+        existing_task.status = task.status.clone();
+        existing_task.updated_at = task.updated_at;
+    } else {
+        println!("Task with ID {} not found.", task.id);
+        return;
+    }
+    write(&tasks);
+}
+
+pub fn get_task_by_id(id: u32) -> Option<task::Task> {
+    let tasks = get_tasks_from_file();
+    tasks.tasks.into_iter().find(|t| t.id == id)
 }
