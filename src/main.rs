@@ -25,7 +25,24 @@ fn main() {
             println!("Task added: {}", task);
         }
         "update" => {}
-        "delete" => {}
+        "delete" => {
+            if args.len() < 3 {
+                println!("Please provide a task ID to delete.");
+                help();
+                return;
+            }
+
+            let id: u32 = match args[2].parse() {
+                Ok(id) => id,
+                Err(_) => {
+                    println!("Invalid task ID: {}", args[2]);
+                    return;
+                }
+            };
+
+            io::delete(id);
+            println!("Task with ID {} deleted.", id);
+        }
         "mark-in-progress" => {}
         "mark-done" => {}
         "list" => {}
