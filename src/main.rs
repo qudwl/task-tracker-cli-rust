@@ -1,6 +1,8 @@
 use std::env;
+use std::time::SystemTime;
 
 mod io;
+mod task;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -19,7 +21,7 @@ fn main() {
             }
 
             let task = &args[2];
-            io::add(task);
+            add_task(task);
             println!("Task added: {}", task);
         }
         "update" => {}
@@ -35,6 +37,7 @@ fn main() {
     }
 }
 
+// Prints the help message for the CLI
 fn help() {
     println!("Usage: task-cli [options]");
     println!("Options:");
@@ -48,4 +51,18 @@ fn help() {
     println!("  list \"[done|todo|in-progress]\"  List tasks by status");
     println!("");
     println!("  help      Show this help message");
+}
+
+fn add_task(description: &str) {
+    let last_id = io::get_last_id();
+    let task = task::Task {
+        id: last_id + 1,
+        description: description.to_string(),
+        status: task::Status::Todo,
+        created_at: SystemTime::now(),
+        updated_at: SystemTime::now(),
+    };
+
+    io::add(&task);
+    println!("Task added with ID: {}", task.id);
 }
