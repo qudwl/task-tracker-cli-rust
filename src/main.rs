@@ -1,5 +1,7 @@
 use std::env;
 
+mod io;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -9,7 +11,17 @@ fn main() {
     }
 
     match args[1].as_str() {
-        "add" => {}
+        "add" => {
+            if args.len() < 3 {
+                println!("Please provide a task to add.");
+                help();
+                return;
+            }
+
+            let task = &args[2];
+            io::add(task);
+            println!("Task added: {}", task);
+        }
         "update" => {}
         "delete" => {}
         "mark-in-progress" => {}
